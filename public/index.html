@@ -930,6 +930,7 @@ function viewAdminLogin(){
 /* ---------- ルーティング ---------- */
 function route(){
   var h = location.hash || "#/メインページ";
+  try { h = decodeURIComponent(h); } catch (e) {}
   if (h.indexOf("#sec-") === 0) return;
   document.getElementById("sidebar").classList.remove("open");
   document.getElementById("scrim").classList.remove("show");
