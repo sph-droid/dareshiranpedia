@@ -532,7 +532,7 @@ async function viewHome(){
   content.innerHTML =
     '<h1 class="pagetitle">メインページ</h1>'
     + '<div class="welcome"><h2>誰もしらんペディアへようこそ</h2>'
-    + '<p>誰もしらんペディアは、誰でも自由に写真と情報を登録できる参加型のオンライン百科事典です。日常の物体、動物、場所、現象、珍しい発見、個人的な記録、仮説、創作——価値やジャンルは問いません。誰かが、なんか載せています。</p>'
+    + '<p>誰もしらんペディアは、誰でも自由に写真と情報を登録できる参加型のオンライン百科事典です。日常の物体、動物、場所、現象、珍しい発見、個人的な記録、仮説、創作——価値やジャンルは問いません。誰かが、なんか載せれます。</p>'
     + '<p><a class="btn primary" href="#/新規作成">新規記事を作成する</a>　<a class="btn" href="#random" id="home-random">おまかせ表示（ランダム記事）</a></p></div>'
     + '<div class="cols">'
     + '<section class="homebox"><h2>最近更新された記事</h2><ul>'+(d.recent || []).map(function(a){ return li(a, fmtDate(a.updated_at)); }).join("")+'</ul></section>'
