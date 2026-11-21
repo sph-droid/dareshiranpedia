@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light" />
+<meta name="description" content="誰もしらんペディア — 誰かが、なんか載せている謎の辞書サイト。誰でも自由に写真と情報を登録できる参加型のオンライン百科事典。" />
+<link rel="icon" href="data:," />
+<title>誰もしらんペディア — 誰かが、なんか載せている</title>
+<style>
+  :root{
+    --ink:#202122; --ink-sub:#54595d; --line:#a2a9b1; --line-soft:#c8ccd1;
+    --link:#3366cc; --link-visited:#795cb2; --link-new:#ba0000;
+    --panel:#f8f9fa; --panel-line:#a7d7f9; --accent:#36c;
+    --serif:"Linux Libertine","Georgia","Times New Roman","Hiragino Mincho ProN","Yu Mincho",serif;
+    --sans:-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{ margin:0; background:#fff; color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.65; }
+  a{ color:var(--link); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  a.new{ color:var(--link-new); }
+  button, input, select, textarea{ font-family:inherit; font-size:inherit; }
+  button, [role="button"], select, input:not([type="checkbox"]){ min-height:2.25rem; }
+  img{ max-width:100%; }
+
+  /* ---------- top bar ---------- */
+  .topbar{ display:flex; align-items:center; gap:.75rem; padding:.45rem 1rem; border-bottom:1px solid var(--line-soft); background:#fff; position:sticky; top:0; z-index:40; }
+  .hamb{ display:none; background:none; border:1px solid var(--line-soft); border-radius:2px; width:2.5rem; height:2.5rem; font-size:1.15rem; cursor:pointer; color:var(--ink); }
+  .wordmark{ font-family:var(--serif); font-size:1.28rem; font-weight:700; color:var(--ink); white-space:nowrap; letter-spacing:.02em; }
+  .wordmark:hover{ text-decoration:none; }
+  .wordmark small{ display:block; font-family:var(--sans); font-size:.68rem; font-weight:400; color:var(--ink-sub); letter-spacing:.04em; }
+  .topsearch{ margin-left:auto; display:flex; gap:.4rem; align-items:center; }
+  .topsearch input[type="search"]{ width:min(46vw,340px); padding:.42rem .6rem; border:1px solid var(--line); border-radius:2px; }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:.35rem; background:#f8f9fa; border:1px solid var(--line); border-radius:2px; color:var(--ink); padding:.42rem .9rem; cursor:pointer; font-size:.92rem; line-height:1.2; }
+  .btn:hover{ background:#fff; text-decoration:none; }
+  .btn.primary{ background:#36c; border-color:#36c; color:#fff; font-weight:600; }
+  .btn.primary:hover{ background:#2a4b8d; }
+  .btn.danger{ color:#b32424; border-color:#d99; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .userbox{ display:flex; align-items:center; gap:.6rem; font-size:.88rem; white-space:nowrap; }
+
+  /* ---------- layout ---------- */
+  .layout{ display:flex; align-items:flex-start; max-width:1440px; margin:0 auto; }
+  .sidebar{ width:176px; flex:0 0 176px; padding:1rem .8rem 2rem 1rem; font-size:.86rem; position:sticky; top:57px; }
+  .sidebar .logo-block{ text-align:center; padding:.4rem 0 1rem; border-bottom:1px solid var(--line-soft); margin-bottom:.8rem; }
+  .sidebar .logo-mark{ font-family:var(--serif); font-size:2rem; line-height:1; color:var(--ink); }
+  .sidebar .logo-name{ font-family:var(--serif); font-weight:700; margin-top:.3rem; font-size:.95rem; line-height:1.35; }
+  .sidebar .logo-tag{ color:var(--ink-sub); font-size:.72rem; margin-top:.25rem; }
+  .sidebar h3{ font-size:.8rem; color:var(--ink-sub); font-weight:600; border-bottom:1px solid var(--line-soft); padding-bottom:.2rem; margin:1rem 0 .4rem; }
+  .sidebar ul{ list-style:none; margin:0; padding:0; }
+  .sidebar li{ margin:.28rem 0; }
+  .content{ flex:1 1 auto; min-width:0; padding:1.2rem 1.6rem 3rem; border-left:1px solid var(--line-soft); background:#fff; }
+  .scrim{ display:none; }
+
+  /* ---------- article chrome ---------- */
+  .pagetabs{ display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:.4rem; flex-wrap:wrap; }
+  .pagetabs a, .pagetabs span{ padding:.35rem .8rem; font-size:.88rem; border:1px solid transparent; border-bottom:none; color:var(--link); cursor:pointer; }
+  .pagetabs .on{ color:var(--ink); background:#fff; border-color:var(--line); position:relative; top:1px; font-weight:400; }
+  .pagetabs .spacer{ flex:1; cursor:default; }
+  h1.pagetitle{ font-family:var(--serif); font-weight:400; font-size:1.9rem; line-height:1.25; margin:.2rem 0 .15rem; border-bottom:1px solid var(--line); padding-bottom:.25rem; }
+  .subtitle{ color:var(--ink-sub); font-size:.85rem; margin-bottom:1rem; }
+  .article-body h2{ font-family:var(--serif); font-weight:400; font-size:1.45rem; border-bottom:1px solid var(--line); padding-bottom:.2rem; margin:1.6rem 0 .6rem; overflow:hidden; }
+  .article-body h3{ font-size:1.08rem; margin:1.2rem 0 .4rem; }
+  .article-body p{ margin:.55rem 0; }
+  .article-body ul{ margin:.4rem 0 .8rem; padding-left:1.5rem; }
+  .article-body li{ margin:.2rem 0; }
+  .editlink{ font-size:.8rem; font-family:var(--sans); margin-left:.5rem; }
+
+  /* TOC */
+  .toc{ display:inline-block; background:var(--panel); border:1px solid var(--line); padding:.6rem 1.1rem .7rem .9rem; margin:.6rem 0 1rem; font-size:.9rem; max-width:100%; }
+  .toc .toc-title{ font-weight:700; text-align:center; margin-bottom:.3rem; }
+  .toc ol{ margin:0; padding-left:.4rem; list-style:none; }
+  .toc li{ margin:.18rem 0; }
+  .toc ol ol{ padding-left:1.2rem; list-style:none; }
+
+  /* Infobox */
+  .infobox{ float:right; clear:right; width:300px; margin:0 0 1rem 1.2rem; border:1px solid var(--line); background:var(--panel); font-size:.86rem; border-collapse:collapse; }
+  .infobox caption{ font-weight:700; font-size:1rem; padding:.45rem .5rem; background:#eaecf0; border:1px solid var(--line); border-bottom:none; }
+  .infobox td, .infobox th{ padding:.35rem .55rem; border-top:1px solid #dfe2e6; vertical-align:top; text-align:left; }
+  .infobox th{ background:#eaecf0; width:38%; font-weight:600; }
+  .infobox .ib-img{ padding:0; text-align:center; background:#fff; }
+  .infobox .ib-img img{ display:block; width:100%; height:auto; }
+  .infobox .ib-cap{ font-size:.78rem; color:var(--ink-sub); padding:.35rem .55rem; text-align:left; background:#fff; }
+
+  figure.thumb{ margin:.4rem 0 1rem; max-width:520px; }
+  figure.thumb img{ border:1px solid var(--line-soft); display:block; }
+  figure.thumb figcaption{ font-size:.82rem; color:var(--ink-sub); padding:.25rem .1rem; }
+
+  .catlinks{ border:1px solid var(--line); background:var(--panel); padding:.45rem .8rem; margin-top:2rem; font-size:.9rem; clear:both; }
+  .tagline{ font-size:.88rem; color:var(--ink-sub); margin-top:.5rem; }
+  .tagline a{ margin-right:.2rem; }
+  .article-meta{ font-size:.85rem; color:var(--ink-sub); border-top:1px solid var(--line-soft); margin-top:1.6rem; padding-top:.6rem; }
+
+  /* ---------- home ---------- */
+  .welcome{ border:1px solid var(--panel-line); background:#f5faff; padding:1rem 1.2rem; margin-bottom:1.4rem; }
+  .welcome h2{ font-family:var(--serif); font-weight:400; font-size:1.5rem; margin:.1rem 0 .4rem; border:none; }
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:1.4rem 2.2rem; }
+  .homebox h2{ font-family:var(--serif); font-weight:400; font-size:1.25rem; border-bottom:1px solid var(--line); padding-bottom:.2rem; margin:0 0 .55rem; }
+  .homebox ul{ margin:0; padding-left:1.3rem; }
+  .homebox li{ margin:.3rem 0; }
+  .homebox .when{ color:var(--ink-sub); font-size:.82rem; }
+  .stats{ display:flex; gap:2rem; flex-wrap:wrap; }
+  .stats div b{ font-size:1.25rem; font-family:var(--serif); font-weight:400; display:block; }
+  .stats div span{ color:var(--ink-sub); font-size:.82rem; }
+
+  /* ---------- lists / tables ---------- */
+  table.plain{ border-collapse:collapse; width:100%; font-size:.92rem; }
+  table.plain th, table.plain td{ border:1px solid var(--line-soft); padding:.45rem .6rem; text-align:left; vertical-align:top; }
+  table.plain th{ background:var(--panel); font-weight:600; }
+  .searchresult{ margin:0 0 1.1rem; }
+  .searchresult .sr-title{ font-size:1.05rem; }
+  .searchresult .sr-snip{ color:#333; font-size:.92rem; }
+  .searchresult .sr-meta{ color:var(--ink-sub); font-size:.8rem; }
+  .kindtag{ font-size:.78rem; border:1px solid var(--line-soft); border-radius:2px; padding:.05rem .4rem; background:var(--panel); white-space:nowrap; }
+
+  /* ---------- forms ---------- */
+  .form{ max-width:820px; }
+  .form label{ display:block; font-weight:600; margin:1rem 0 .3rem; font-size:.95rem; }
+  .form label .hint{ font-weight:400; color:var(--ink-sub); font-size:.82rem; margin-left:.4rem; }
+  .form input[type="text"], .form input[type="password"], .form input[type="email"], .form input[type="datetime-local"], .form select, .form textarea{ width:100%; padding:.5rem .6rem; border:1px solid var(--line); border-radius:2px; background:#fff; }
+  .form textarea{ min-height:300px; line-height:1.6; font-size:.95rem; }
+  .form .row{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .imgedit{ border:1px solid var(--line-soft); padding:.7rem; margin:.6rem 0; display:flex; gap:.8rem; align-items:flex-start; background:#fff; }
+  .imgedit img{ width:110px; height:82px; object-fit:cover; border:1px solid var(--line-soft); flex:0 0 auto; }
+  .imgedit .grow{ flex:1; min-width:0; }
+  .imgedit input[type="text"]{ margin-top:.35rem; }
+  .imgedit .moves{ display:flex; flex-direction:column; gap:.3rem; }
+  .imgedit .moves .btn{ padding:.2rem .5rem; min-height:1.8rem; }
+  .notice{ border:1px solid #a3b8cc; background:#eef4fb; padding:.7rem 1rem; margin:1rem 0; font-size:.93rem; }
+  .notice.warn{ border-color:#d4a017; background:#fdf6dd; }
+  .notice.err{ border-color:#c66; background:#fbeaea; }
+  .notice.ok{ border-color:#7a7; background:#edf7ed; }
+  .small{ font-size:.85rem; color:var(--ink-sub); }
+  .markup-help{ background:var(--panel); border:1px solid var(--line-soft); padding:.6rem .9rem; font-size:.85rem; margin-top:.5rem; }
+  .markup-help code{ background:#eaecf0; padding:.05rem .3rem; border-radius:2px; }
+  .tswrap{ margin:1rem 0; }
+
+  .footer{ border-top:1px solid var(--line-soft); padding:1rem 1.6rem 2rem; font-size:.82rem; color:var(--ink-sub); max-width:1440px; margin:0 auto; }
+  .footer ul{ list-style:none; display:flex; gap:1.2rem; flex-wrap:wrap; padding:0; margin:.4rem 0 0; }
+
+  @media (max-width: 900px){
+    .topbar{ flex-wrap:wrap; row-gap:.35rem; }
+    .topsearch{ order:3; width:100%; margin-left:0; }
+    .topsearch input[type="search"]{ flex:1; width:auto; }
+    .userbox{ margin-left:auto; }
+    .hamb{ display:inline-flex; align-items:center; justify-content:center; }
+    .wordmark small{ display:none; }
+    .sidebar{ display:none; position:fixed; left:0; top:0; bottom:0; width:250px; background:#fff; z-index:60; overflow-y:auto; box-shadow:2px 0 10px rgba(0,0,0,.15); padding-top:1rem; }
+    .sidebar.open{ display:block; }
+    .scrim.show{ display:block; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:55; }
+    .content{ padding:1rem 1rem 2.5rem; border-left:none; }
+    .infobox{ float:none; width:100%; margin:0 0 1rem; }
+    .cols{ grid-template-columns:1fr; }
+    .form .row{ grid-template-columns:1fr; }
+    .topsearch input[type="search"]{ width:34vw; }
+    h1.pagetitle{ font-size:1.55rem; }
+  }
+  @media (prefers-reduced-motion: reduce){ .sidebar{ transition:none; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="hamb" id="hamb" aria-label="ナビゲーションを開く">☰</button>
+  <a class="wordmark" href="#/メインページ">誰もしらんペディア<small>誰かが、なんか載せている</small></a>
+  <form class="topsearch" id="searchform">
+    <input type="search" id="searchinput" placeholder="検索" aria-label="サイト内検索" />
+    <button class="btn" type="submit">検索</button>
+  </form>
+  <div class="userbox" id="userbox">
+    <a href="#/新規作成">新規記事を作成</a>
+    <a href="#/管理">管理</a>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="scrim" id="scrim"></div>
+  <nav class="sidebar" id="sidebar" aria-label="ナビゲーション">
+    <div class="logo-block">
+      <div class="logo-mark">？</div>
+      <div class="logo-name">誰もしらん<br />ペディア</div>
+      <div class="logo-tag">誰かが、なんか載せている謎の辞書</div>
+    </div>
+    <h3>ナビゲーション</h3>
+    <ul>
+      <li><a href="#/メインページ">メインページ</a></li>
+      <li><a href="#/最近の更新">最近の更新</a></li>
+      <li><a href="#/記事一覧">記事一覧</a></li>
+      <li><a href="#random" id="nav-random">おまかせ表示</a></li>
+      <li><a href="#/新規作成">新規記事を作成</a></li>
+    </ul>
+    <h3>カテゴリ</h3>
+    <ul id="nav-cats"></ul>
+    <h3>このサイトについて</h3>
+    <ul>
+      <li><a href="#/特別:案内">誰もしらんペディアについて</a></li>
+      <li><a href="#/特別:編集ルール">編集ルール</a></li>
+      <li><a href="#/特別:禁止事項">禁止事項</a></li>
+      <li><a href="#/特別:真偽の方針">真偽に関する方針</a></li>
+      <li><a href="#/特別:プライバシーポリシー">プライバシーポリシー</a></li>
+    </ul>
+    <h3>ヘルプ</h3>
+    <ul>
+      <li><a href="#/特別:書き方">記事の書き方</a></li>
+    </ul>
+  </nav>
+
+  <main class="content" id="content" tabindex="-1"></main>
+</div>
+
+<footer class="footer">
+  <div>誰もしらんペディアは、誰でも自由に写真と情報を登録できる参加型のオンライン百科事典です。掲載情報の真実性は保証されません。</div>
+  <ul>
+    <li><a href="#/特別:案内">このサイトについて</a></li>
+    <li><a href="#/特別:編集ルール">編集ルール</a></li>
+    <li><a href="#/特別:禁止事項">禁止事項</a></li>
+    <li><a href="#/特別:真偽の方針">真偽に関する方針</a></li>
+    <li><a href="#/特別:プライバシーポリシー">プライバシーポリシー</a></li>
+  </ul>
+</footer>
+
+<script src="/config.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   誰もしらんペディア（公開運用版フロントエンド）
+   データは全て /api 経由で取得・保存する。ブラウザから
+   Supabase へ直接アクセスはしない。アカウント制はなく、
+   投稿は匿名（任意のニックネーム）で行う。
+   ============================================================ */
+
+var content = document.getElementById("content");
+var TITLES = {};      // タイトル -> 記事ID（Wikiリンクの赤/青判定用）
+var CATS = [];        // {name, count}
+var flashMsg = "";
+
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function fmtDate(iso){
+  if (!iso) return "";
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  function p(x){ return (x<10?"0":"")+x; }
+  return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日 "+p(d.getHours())+":"+p(d.getMinutes());
+}
+function splitList(s){ return String(s||"").split(/[,、]/).map(function(x){ return x.trim(); }).filter(Boolean); }
+function kindLabel(k){ return k==="create" ? "新規作成" : k==="restore" ? "復元" : "編集"; }
+function nickname(){ try { return localStorage.getItem("dareshi_nickname") || ""; } catch(e){ return ""; } }
+function saveNickname(n){ try { if (n) localStorage.setItem("dareshi_nickname", n); } catch(e){} }
+
+/* ---------- APIクライアント ---------- */
+async function api(path, opts){
+  opts = opts || {};
+  var res = await fetch(path, {
+    method: opts.method || "GET",
+    headers: opts.body !== undefined ? { "Content-Type": "application/json" } : undefined,
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    credentials: "same-origin"
+  });
+  var data = null;
+  try { data = await res.json(); } catch(e) {}
+  return { status: res.status, data: data || {} };
+}
+function errText(r, fallback){
+  return (r.data && r.data.error) || fallback || ("エラーが発生しました（" + r.status + "）");
+}
+
+async function loadTitles(){
+  try {
+    var r = await api("/api/articles?titles=1");
+    if (r.status === 200){
+      TITLES = {};
+      (r.data.titles || []).forEach(function(t){ TITLES[t.title] = t.id; });
+      CATS = r.data.categories || [];
+      renderNavCats();
+    }
+  } catch(e) {}
+}
+function renderNavCats(){
+  document.getElementById("nav-cats").innerHTML = CATS.map(function(c){
+    return '<li><a href="#/カテゴリ:'+encodeURIComponent(c.name)+'">'+esc(c.name)+'</a></li>';
+  }).join("");
+}
+
+/* ---------- Turnstile（config.js でサイトキーが設定されている場合のみ） ---------- */
+function turnstileKey(){
+  return (window.DARESHI_CONFIG && window.DARESHI_CONFIG.turnstileSiteKey) || "";
+}
+function turnstileSlot(){
+  return turnstileKey() ? '<div class="tswrap"><div class="cf-turnstile" data-sitekey="'+esc(turnstileKey())+'"></div></div>' : "";
+}
+function loadTurnstile(){
+  if (!turnstileKey()) return;
+  if (document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) return;
+  var s = document.createElement("script");
+  s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+  s.async = true; s.defer = true;
+  document.head.appendChild(s);
+}
+function turnstileToken(){
+  if (!turnstileKey()) return "";
+  var inp = document.querySelector('input[name="cf-turnstile-response"]');
+  return inp ? inp.value : "";
+}
+
+/* ---------- Wiki記法の描画 ---------- */
+function wikiLink(title, label){
+  var exists = Object.prototype.hasOwnProperty.call(TITLES, title);
+  return '<a class="'+(exists?"":"new")+'" href="#/記事:'+encodeURIComponent(title)+'">'+esc(label||title)+'</a>';
+}
+
+/* 情報ボックスは本文先頭の {{情報ボックス |項目=内容 }} 記法で保持する
+   （MediaWiki のテンプレート記法と同じ考え方。本文と一緒に版管理される） */
+function splitInfobox(body){
+  var text = String(body || "");
+  var m = text.match(/\{\{情報ボックス\s*\n([\s\S]*?)\n?\}\}/);
+  if (!m) return { rows: [], text: text };
+  var rows = [];
+  m[1].split("\n").forEach(function(line){
+    var t = line.trim();
+    if (t.charAt(0) === "|") t = t.slice(1);
+    var i = t.indexOf("=");
+    if (i > 0) rows.push([t.slice(0, i).trim(), t.slice(i + 1).trim()]);
+  });
+  return { rows: rows, text: text.replace(m[0], "").replace(/^\n+/, "") };
+}
+function infoboxToBlock(rows){
+  if (!rows || !rows.length) return "";
+  return "{{情報ボックス\n" + rows.map(function(r){ return "|" + r[0] + "=" + r[1]; }).join("\n") + "\n}}\n";
+}
+function infoboxRowsToText(rows){
+  return (rows || []).map(function(r){ return r[0] + ": " + r[1]; }).join("\n");
+}
+function infoboxTextToRows(text){
+  return String(text || "").split("\n").map(function(l){
+    var i = l.indexOf(":"); if (i < 0) i = l.indexOf("：");
+    if (i < 1) return null;
+    return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
+  }).filter(Boolean);
+}
+
+/* 簡易Wiki記法 → HTML。本文中の [[記事名]] / [[記事名|表示]] に対応 */
+function renderBody(text){
+  var lines = String(text||"").split("\n"), out = [], inList = false, headings = [];
+  function inline(s){
+    s = esc(s);
+    s = s.replace(/'''(.+?)'''/g, "<b>$1</b>");
+    s = s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, function(m, t, l){ return wikiLink(t, l||t); });
+    s = s.replace(/\[https?:\/\/[^\s\]]+\s+([^\]]+)\]/g, function(m, l){ return esc(l); });
+    return s;
+  }
+  function closeList(){ if(inList){ out.push("</ul>"); inList=false; } }
+  lines.forEach(function(raw){
+    var line = raw.replace(/\s+$/,"");
+    var m;
+    if ((m = line.match(/^===\s*(.+?)\s*===$/))){ closeList(); headings.push({lv:3, t:m[1]}); out.push('<h3 id="sec-'+headings.length+'">'+inline(m[1])+'</h3>'); }
+    else if ((m = line.match(/^==\s*(.+?)\s*==$/))){ closeList(); headings.push({lv:2, t:m[1]}); out.push('<h2 id="sec-'+headings.length+'">'+inline(m[1])+'</h2>'); }
+    else if ((m = line.match(/^\*\s+(.*)$/))){ if(!inList){ out.push("<ul>"); inList=true; } out.push("<li>"+inline(m[1])+"</li>"); }
+    else if (line.trim()===""){ closeList(); }
+    else { closeList(); out.push("<p>"+inline(line)+"</p>"); }
+  });
+  closeList();
+  return { html: out.join("\n"), headings: headings };
+}
+
+function tocHtml(headings){
+  if (headings.length < 2) return "";
+  var n2 = 0, items = [], cur = null;
+  headings.forEach(function(h, i){
+    if (h.lv===2){ n2++; cur = { n:n2, t:h.t, i:i+1, subs:[] }; items.push(cur); }
+    else if (cur){ cur.subs.push({ n:n2+"."+(cur.subs.length+1), t:h.t, i:i+1 }); }
+  });
+  var s = '<div class="toc"><div class="toc-title">目次</div><ol>';
+  items.forEach(function(it){
+    s += '<li><a href="#sec-'+it.i+'" data-anchor="sec-'+it.i+'">'+it.n+' '+esc(it.t)+'</a>';
+    if (it.subs.length){ s += "<ol>"; it.subs.forEach(function(sb){ s += '<li><a href="#sec-'+sb.i+'" data-anchor="sec-'+sb.i+'">'+sb.n+' '+esc(sb.t)+'</a></li>'; }); s += "</ol>"; }
+    s += "</li>";
+  });
+  return s + "</ol></div>";
+}
+
+function infoboxHtml(a, rows){
+  var images = a.images || [];
+  if (!images.length && !(rows && rows.length)) return "";
+  var s = '<table class="infobox"><caption>'+esc(a.title)+'</caption><tbody>';
+  if (images.length){
+    s += '<tr><td class="ib-img" colspan="2"><img src="'+esc(images[0].url)+'" alt="'+esc(a.title)+'" /></td></tr>';
+    if (images[0].caption) s += '<tr><td class="ib-cap" colspan="2">'+esc(images[0].caption)+'</td></tr>';
+  }
+  (rows||[]).forEach(function(r){ s += '<tr><th>'+esc(r[0])+'</th><td>'+esc(r[1])+'</td></tr>'; });
+  return s + "</tbody></table>";
+}
+
+function bindAnchors(){
+  content.querySelectorAll("[data-anchor]").forEach(function(el){
+    el.addEventListener("click", function(e){ e.preventDefault(); var t = document.getElementById(el.getAttribute("data-anchor")); if (t) t.scrollIntoView(); });
+  });
+}
+function loading(){
+  content.innerHTML = '<p class="small">読み込み中…</p>';
+}
+
+/* ---------- 記事まわり ---------- */
+function articleTabs(a, active){
+  return '<div class="pagetabs">'
+    + '<a class="'+(active==="read"?"on":"")+'" href="#/記事:'+encodeURIComponent(a.title)+'">記事</a>'
+    + '<a class="'+(active==="history"?"on":"")+'" href="#/履歴:'+encodeURIComponent(a.title)+'">編集履歴</a>'
+    + '<span class="spacer"></span>'
+    + (active==="read" ? '<a href="#/編集:'+encodeURIComponent(a.title)+'">編集</a>' : "")
+    + (active==="read" ? '<a href="#/報告:'+encodeURIComponent(a.title)+'">報告する</a>' : "")
+    + '</div>';
+}
+
+function articleBodyHtml(a){
+  var parts = splitInfobox(a.body);
+  var r = renderBody(parts.text);
+  var extraImgs = (a.images || []).slice(1).map(function(im){
+    return '<figure class="thumb"><img src="'+esc(im.url)+'" alt="'+esc(im.caption||a.title)+'" /><figcaption>'+esc(im.caption||"")+'</figcaption></figure>';
+  }).join("");
+  var related = (a.related && a.related.length && parts.text.indexOf("関連項目") < 0)
+    ? '<h2>関連記事</h2><ul>'+a.related.map(function(t){ return "<li>"+wikiLink(t)+"</li>"; }).join("")+"</ul>" : "";
+  return { rows: parts.rows, html: tocHtml(r.headings) + r.html + extraImgs + related };
+}
+
+async function fetchArticleByTitle(title){
+  var r = await api("/api/articles/by-title?title=" + encodeURIComponent(title));
+  return r;
+}
+
+async function viewArticle(title){
+  loading();
+  await loadTitles();
+  var r = await fetchArticleByTitle(title);
+  if (r.status === 404){
+    content.innerHTML = '<div class="pagetabs"><span class="on">記事</span></div>'
+      + '<h1 class="pagetitle">'+esc(title)+'</h1>'
+      + '<div class="notice warn">「'+esc(title)+'」という記事はまだ存在しません。誰もしらんペディアには、この記事へのリンクがありますが、まだ書かれていません。あなたが最初の筆者になれます。</div>'
+      + '<p><a class="btn primary" href="#/新規作成?title='+encodeURIComponent(title)+'">この記事を作成する</a></p>';
+    document.title = title + " - 誰もしらんペディア";
+    return;
+  }
+  if (r.status !== 200){ content.innerHTML = '<div class="notice err">'+esc(errText(r))+'</div>'; return; }
+  var a = r.data.article;
+  a.images = r.data.images || [];
+  var body = articleBodyHtml(a);
+  var cats = '<a href="#/カテゴリ:'+encodeURIComponent(a.category)+'">カテゴリ:'+esc(a.category)+'</a>';
+  var tags = a.tags && a.tags.length ? '<div class="tagline">タグ: '+a.tags.map(function(t){ return '<a href="#/検索:'+encodeURIComponent(t)+'">#'+esc(t)+'</a>'; }).join(" ")+'</div>' : "";
+  content.innerHTML = articleTabs(a, "read")
+    + '<h1 class="pagetitle">'+esc(a.title)+'</h1>'
+    + '<div class="subtitle">出典: フリー百科事典『誰もしらんペディア』</div>'
+    + infoboxHtml(a, body.rows)
+    + '<div class="article-body">' + body.html + '</div>'
+    + '<div class="catlinks">'+cats+'</div>' + tags
+    + '<div class="article-meta">作成: '+fmtDate(a.created_at)+'（'+esc(r.data.created_by || "匿名")+'）／ 最終更新: '+fmtDate(a.updated_at)+' ／ 編集回数: '+r.data.revision_count+'回 ／ <a href="#/履歴:'+encodeURIComponent(a.title)+'">編集履歴を見る</a></div>';
+  document.title = a.title + " - 誰もしらんペディア";
+  bindAnchors();
+}
+
+async function viewHistory(title){
+  loading();
+  var r = await fetchArticleByTitle(title);
+  if (r.status !== 200){ location.hash = "#/記事:"+encodeURIComponent(title); return; }
+  var a = r.data.article;
+  var revR = await api("/api/articles/" + a.id + "/revisions");
+  var revs = (revR.data && revR.data.revisions) || [];
+  var latestId = revs.length ? revs[0].id : null;
+  var rows = revs.map(function(h){
+    var isCur = h.id === latestId;
+    return '<tr><td>'+fmtDate(h.created_at)+'</td><td>'+esc(h.nickname)+'</td><td><span class="kindtag">'+kindLabel(h.kind)+'</span></td>'
+      + '<td>'+(isCur ? "現在の版" : '<a href="#/版:'+encodeURIComponent(a.title)+'/'+h.id+'">見る</a>　<button class="btn" data-restore="'+h.id+'">この版に復元</button>')+'</td></tr>';
+  }).join("");
+  content.innerHTML = articleTabs(a, "history")
+    + '<h1 class="pagetitle">「'+esc(a.title)+'」の編集履歴</h1>'
+    + flashMsg
+    + '<div class="subtitle">過去の版は保存されており、復元できます（復元も編集として数えます）。各版には編集IDが付いています。</div>'
+    + '<table class="plain"><thead><tr><th>日時</th><th>編集者</th><th>種別</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    + '<p class="small">編集IDは各行の「見る」のリンク先に含まれています。</p>'
+    + turnstileSlot();
+  flashMsg = "";
+  loadTurnstile();
+  document.title = "編集履歴 - " + a.title;
+  content.querySelectorAll("[data-restore]").forEach(function(b){
+    b.addEventListener("click", function(){ restoreVersion(a, b.getAttribute("data-restore")); });
+  });
+}
+
+async function restoreVersion(a, revisionId){
+  var nick = nickname();
+  var r = await api("/api/articles/" + a.id + "/restore", { method: "POST", body: { revision_id: revisionId, nickname: nick, turnstile_token: turnstileToken() } });
+  if (r.status === 200){
+    await loadTitles();
+    location.hash = "#/記事:"+encodeURIComponent(a.title);
+  } else {
+    flashMsg = '<div class="notice err">'+esc(errText(r))+'</div>';
+    viewHistory(a.title);
+  }
+}
+
+async function viewVersion(title, rid){
+  loading();
+  var r = await fetchArticleByTitle(title);
+  if (r.status !== 200){ location.hash = "#/記事:"+encodeURIComponent(title); return; }
+  var a = r.data.article;
+  a.images = r.data.images || [];
+  var v = await api("/api/articles/" + a.id + "/revisions/" + rid);
+  if (v.status !== 200){ content.innerHTML = '<div class="notice err">'+esc(errText(v))+'</div>'; return; }
+  var rev = v.data.revision;
+  var snap = { title: a.title, body: rev.body, category: rev.category, tags: rev.tags, related: rev.related, images: a.images };
+  var body = articleBodyHtml(snap);
+  content.innerHTML = articleTabs(a, "history")
+    + '<h1 class="pagetitle">'+esc(a.title)+'（過去の版）</h1>'
+    + '<div class="notice warn">これは '+fmtDate(rev.created_at)+' 時点の版です（編集者: '+esc(rev.nickname)+' ／ 種別: '+kindLabel(rev.kind)+' ／ 編集ID: '+esc(rev.id)+'）。写真は現在のものが表示されています。<br /><button class="btn" id="ver-restore" style="margin-top:.5rem">この版に復元する</button>　<a href="#/記事:'+encodeURIComponent(a.title)+'">現在の版を見る</a></div>'
+    + infoboxHtml(snap, body.rows)
+    + '<div class="article-body">' + body.html + '</div>'
+    + '<div class="catlinks"><a href="#/カテゴリ:'+encodeURIComponent(rev.category)+'">カテゴリ:'+esc(rev.category)+'</a></div>'
+    + turnstileSlot();
+  document.title = a.title + "（過去の版） - 誰もしらんペディア";
+  loadTurnstile();
+  bindAnchors();
+  document.getElementById("ver-restore").addEventListener("click", function(){ restoreVersion(a, rid); });
+}
+
+/* ---------- トップ・一覧・検索 ---------- */
+async function viewHome(){
+  loading();
+  var r = await api("/api/home");
+  if (r.status !== 200){ content.innerHTML = '<div class="notice err">'+esc(errText(r))+'</div>'; return; }
+  var d = r.data;
+  await loadTitles();
+  var li = function(a, when){ return '<li><a href="#/記事:'+encodeURIComponent(a.title)+'">'+esc(a.title)+'</a> <span class="when">（'+when+'）</span></li>'; };
+  content.innerHTML =
+    '<h1 class="pagetitle">メインページ</h1>'
+    + '<div class="welcome"><h2>誰もしらんペディアへようこそ</h2>'
+    + '<p>誰もしらんペディアは、誰でも自由に写真と情報を登録できる参加型のオンライン百科事典です。日常の物体、動物、場所、現象、珍しい発見、個人的な記録、仮説、創作——価値やジャンルは問いません。誰かが、なんか載せています。</p>'
+    + '<p><a class="btn primary" href="#/新規作成">新規記事を作成する</a>　<a class="btn" href="#random" id="home-random">おまかせ表示（ランダム記事）</a></p></div>'
+    + '<div class="cols">'
+    + '<section class="homebox"><h2>最近更新された記事</h2><ul>'+(d.recent || []).map(function(a){ return li(a, fmtDate(a.updated_at)); }).join("")+'</ul></section>'
+    + '<section class="homebox"><h2>新しく登録された記事</h2><ul>'+(d.newest || []).map(function(a){ return li(a, fmtDate(a.created_at)); }).join("")+'</ul></section>'
+    + '<section class="homebox"><h2>カテゴリ一覧</h2><ul>'+(d.categories || []).map(function(c){ return '<li><a href="#/カテゴリ:'+encodeURIComponent(c.name)+'">'+esc(c.name)+'</a> <span class="when">（'+c.count+'件）</span></li>'; }).join("")+'</ul></section>'
+    + '<section class="homebox"><h2>統計情報</h2><div class="stats"><div><b>'+d.stats.articles+'</b><span>記事数</span></div><div><b>'+d.stats.images+'</b><span>画像数</span></div><div><b>'+d.stats.categories+'</b><span>カテゴリ数</span></div><div><b>'+d.stats.revisions+'</b><span>総編集回数</span></div></div>'
+    + '<p class="small" style="margin-top:.8rem">閲覧と検索は無制限です。投稿・編集には接続元ごとの頻度制限があります（<a href="#/特別:編集ルール">編集ルール</a>）。アカウント登録は不要です。</p></section>'
+    + '</div>';
+  document.title = "誰もしらんペディア — 誰かが、なんか載せている";
+  var rb = document.getElementById("home-random");
+  if (rb) rb.addEventListener("click", function(e){ e.preventDefault(); goRandom(); });
+}
+
+async function goRandom(){
+  var r = await api("/api/random");
+  if (r.status === 200 && r.data.title) location.hash = "#/記事:"+encodeURIComponent(r.data.title);
+}
+
+async function viewRecent(){
+  loading();
+  var r = await api("/api/articles?recent=30");
+  var rows = (r.data && r.data.recent) || [];
+  content.innerHTML = '<h1 class="pagetitle">最近の更新</h1><div class="subtitle">全記事の編集履歴から、最近の変更を表示しています。</div>'
+    + '<table class="plain"><thead><tr><th>日時</th><th>記事</th><th>編集者</th><th>種別</th></tr></thead><tbody>'
+    + rows.map(function(x){ return '<tr><td>'+fmtDate(x.created_at)+'</td><td><a href="#/記事:'+encodeURIComponent(x.article_title)+'">'+esc(x.article_title)+'</a></td><td>'+esc(x.nickname)+'</td><td><span class="kindtag">'+kindLabel(x.kind)+'</span></td></tr>'; }).join("")
+    + '</tbody></table>';
+  document.title = "最近の更新 - 誰もしらんペディア";
+}
+
+async function viewAll(){
+  loading();
+  var r = await api("/api/articles");
+  var list = ((r.data && r.data.articles) || []).slice().sort(function(x,y){ return x.title < y.title ? -1 : 1; });
+  content.innerHTML = '<h1 class="pagetitle">記事一覧</h1><div class="subtitle">登録されている全 '+list.length+' 件の記事です。</div><ul>'
+    + list.map(function(a){ return '<li><a href="#/記事:'+encodeURIComponent(a.title)+'">'+esc(a.title)+'</a> <span class="small">（カテゴリ: '+esc(a.category)+'／最終更新 '+fmtDate(a.updated_at)+'）</span></li>'; }).join("")
+    + '</ul>';
+  document.title = "記事一覧 - 誰もしらんペディア";
+}
+
+async function viewCategory(cat){
+  loading();
+  var r = await api("/api/articles?category=" + encodeURIComponent(cat));
+  var list = (r.data && r.data.articles) || [];
+  content.innerHTML = '<h1 class="pagetitle">カテゴリ:'+esc(cat)+'</h1><div class="subtitle">このカテゴリには '+list.length+' 件の記事があります。</div><ul>'
+    + (list.length ? list.map(function(a){ return '<li><a href="#/記事:'+encodeURIComponent(a.title)+'">'+esc(a.title)+'</a></li>'; }).join("") : "<li>（記事がありません）</li>")
+    + '</ul><p><a href="#/メインページ">メインページに戻る</a></p>';
+  document.title = "カテゴリ:"+cat+" - 誰もしらんペディア";
+}
+
+async function viewSearch(q){
+  q = (q||"").trim();
+  var res = [];
+  if (q){
+    loading();
+    var r = await api("/api/articles?q=" + encodeURIComponent(q));
+    res = (r.data && r.data.articles) || [];
+  }
+  content.innerHTML = '<h1 class="pagetitle">検索結果</h1>'
+    + '<form id="searchform2" style="display:flex;gap:.4rem;margin-bottom:1rem"><input type="search" id="searchinput2" value="'+esc(q)+'" style="flex:1;padding:.45rem .6rem;border:1px solid var(--line);border-radius:2px" aria-label="検索" /><button class="btn" type="submit">検索</button></form>'
+    + (q ? '<p class="small">「'+esc(q)+'」の検索結果: '+res.length+' 件</p>' : "")
+    + res.map(function(a){
+        var snip = String(a.excerpt || "").replace(/[#=*'\[\]]/g, "");
+        return '<div class="searchresult"><div class="sr-title"><a href="#/記事:'+encodeURIComponent(a.title)+'">'+esc(a.title)+'</a></div><div class="sr-snip">'+esc(snip)+'</div><div class="sr-meta">カテゴリ: '+esc(a.category)+' ／ 最終更新 '+fmtDate(a.updated_at)+'</div></div>';
+      }).join("")
+    + (q && !res.length ? '<div class="notice warn">「'+esc(q)+'」に一致する記事は見つかりませんでした。<a href="#/新規作成?title='+encodeURIComponent(q)+'">この名前で記事を作成</a>できます。</div>' : "");
+  document.title = "検索: "+q+" - 誰もしらんペディア";
+  var f = document.getElementById("searchform2");
+  f.addEventListener("submit", function(e){ e.preventDefault(); location.hash = "#/検索:"+encodeURIComponent(document.getElementById("searchinput2").value); });
+}
+
+/* ---------- 特別ページ ---------- */
+var SPECIAL = {
+  "案内": { t:"誰もしらんペディアについて", html:
+    "<p><b>誰もしらんペディア</b>は、誰でも自由に写真と情報を登録できる参加型のオンライン百科事典です。コンセプトは「誰かが、なんか載せている謎の辞書サイト」。</p>"
+    + "<h2>載せられるもの</h2><ul><li>日常の物体、動物、場所、現象</li><li>珍しい発見、個人的な記録</li><li>仮説、未確認情報、創作</li><li>どうでもいい情報</li></ul>"
+    + "<p>情報のジャンルや価値は限定しません。厳格な特筆性や出典の要件もありません。そのかわり、掲載情報の真実性は運営が一律に保証しません（<a href=\"#/特別:真偽の方針\">真偽に関する方針</a>）。</p>"
+    + "<h2>アカウントは不要です</h2><p>ユーザー登録やログインはありません。誰でもそのまま記事を読んだり、書いたり、編集したりできます。投稿者名は任意のニックネーム（未入力なら「匿名」）が編集履歴に表示されるだけです。</p>"
+    + "<h2>SNSではありません</h2><p>コメント欄、DM、フォロー、いいね、人気ランキングはありません。人間同士の交流ではなく、情報そのものを中心に設計されています。</p>" },
+  "編集ルール": { t:"編集ルール", html:
+    "<p>荒らしやスパムを防ぐため、書き込みの頻度にはサーバー側で制限があります（値は暫定で、運用を見ながら調整されます）。</p><ul><li>新規記事の作成・記事の編集・過去の版への復元は、接続元（IPアドレス）ごとに<b>1日10回まで</b>です</li><li>書き込みと書き込みの間には<b>1分以上の間隔</b>が必要です</li><li>違反報告は1日5回までです</li><li>制限は毎日リセットされます。未使用回数の翌日への繰り越しはありません</li><li>閲覧・検索は無制限です</li></ul>"
+    + "<p>アカウント登録はありません。編集履歴は投稿ごとに発行される<b>編集ID</b>と任意のニックネームで記録され、誰でも<a href=\"#/最近の更新\">最近の更新</a>や各記事の編集履歴から確認できます。過去の版への復元も誰でも行えます（復元も書き込み1回として数えます）。</p>"
+    + "<p>なお、同じネットワーク（家庭・学校・職場など）を共有している場合、制限の枠も共有されます。</p>" },
+  "禁止事項": { t:"禁止事項", html:
+    "<p>以下の投稿は禁止されています。</p><ul><li>個人情報や住所などの掲載</li><li>他人を傷つけることを目的とした投稿</li><li>誹謗中傷や嫌がらせ</li><li>他人の著作物や写真の無断転載</li><li>権利侵害</li><li>違法行為を助長する情報</li><li>性的・成人向けコンテンツ</li><li>スパムや広告目的の投稿</li><li>悪意のあるリンクやファイル</li></ul>"
+    + "<p>投稿者が公開しても問題ない情報だけを登録することが原則です。違反が疑われる記事は、各記事の「報告する」から報告できます。管理者は記事の非公開化・削除や、接続元ごとの投稿制限を行うことがあります。</p>" },
+  "真偽の方針": { t:"真偽に関する方針", html:
+    "<p>このサービスでは、厳格な特筆性や出典要件を設けません。以下も投稿対象にできます。</p><ul><li>個人的な発見</li><li>未確認情報</li><li>仮説</li><li>珍しい体験</li><li>架空の情報、創作</li><li>どうでもいい情報</li></ul>"
+    + "<p>ただし、実在する個人についての虚偽情報や名誉毀損につながる投稿は禁止します（<a href=\"#/特別:禁止事項\">禁止事項</a>）。運営は掲載情報の真実性を一律に保証しません。読む側の判断でご利用ください。</p>" },
+  "書き方": { t:"記事の書き方", html:
+    "<p>本文は自由に記述できます。以下の記法が使えます。</p><ul>"
+    + "<li>見出し: 行頭に <code>== 見出し ==</code>（小見出しは <code>=== 小見出し ===</code>）。見出しから目次が自動生成されます</li>"
+    + "<li>箇条書き: 行頭に <code>* </code></li>"
+    + "<li>太字: <code>'''太字'''</code></li>"
+    + "<li>記事リンク: <code>[[記事名]]</code> または <code>[[記事名|表示文字]]</code>。存在しない記事へのリンクは赤く表示され、クリックするとその記事の作成画面に進めます</li></ul>"
+    + "<p>写真は複数枚アップロードでき、それぞれにキャプションを付けたり、順番を入れ替えたりできます。1枚目の写真は記事の情報ボックスに表示されます。アップロード時に写真は自動で圧縮され、位置情報などのEXIFは除去されます。</p>"
+    + "<p>情報ボックスの項目は、編集画面の「情報ボックス」欄に「項目名: 内容」の形式で1行に1つ書きます。本文と一緒に保存され、編集履歴にも残ります。</p>"
+    + "<p>編集には頻度制限があります（<a href=\"#/特別:編集ルール\">編集ルール</a>）。保存前に内容を見直してください。</p>" },
+  "プライバシーポリシー": { t:"プライバシーポリシー", html:
+    "<h2>集める情報</h2><p>誰もしらんペディアは完全匿名で利用できます。ユーザー登録はなく、メールアドレスやパスワードを集めることはありません。投稿時に任意で入力できるニックネームは、編集履歴の表示にだけ使われます。</p>"
+    + "<h2>IPアドレスの取り扱い</h2><p>スパム・荒らし対策のため、投稿・編集・報告・画像アップロードの際に、接続元IPアドレスを<b>ハッシュ化した値</b>（元のIPアドレスを復元できない形式）を記録します。生のIPアドレスは保存しません。ハッシュ値の保持期間は最長30日を目安とし、頻度制限と投稿制限の目的以外には使いません。</p>"
+    + "<h2>写真について</h2><p>アップロードされた写真は、保存時に自動で圧縮され、撮影場所などの位置情報を含むEXIFは除去されます。ただし、写真の内容そのものに個人を特定できるものが写り込む場合があります。他人の写真の無断転載や、個人が特定できる情報の投稿は<a href=\"#/特別:禁止事項\">禁止事項</a>に該当します。</p>"
+    + "<h2>違反への対応</h2><p>禁止事項に該当する投稿は、各記事の「報告する」から報告できます。管理者は確認のうえ、記事の非公開化・削除や投稿制限を行います。掲載情報の真実性は運営が一律に保証しません（<a href=\"#/特別:真偽の方針\">真偽に関する方針</a>）。</p>"
+    + "<h2>外部サービス</h2><p>このサイトは無料のホスティングとデータベース上で運用されています。アクセス解析のための広告トラッキングなどは行っていません。</p>" }
+};
+
+function viewSpecial(name){
+  var p = SPECIAL[name];
+  if (!p){ viewHome(); return; }
+  content.innerHTML = '<h1 class="pagetitle">'+esc(p.t)+'</h1><div class="subtitle">出典: フリー百科事典『誰もしらんペディア』</div><div class="article-body">'+p.html+'</div>';
+  document.title = p.t + " - 誰もしらんペディア";
+}
+
+/* ---------- 報告 ---------- */
+async function viewReport(title){
+  loading();
+  var r = await fetchArticleByTitle(title);
+  if (r.status !== 200){
+    content.innerHTML = '<h1 class="pagetitle">記事の報告</h1><div class="notice warn">記事「'+esc(title)+'」が見つかりませんでした。</div>';
+    return;
+  }
+  var a = r.data.article;
+  content.innerHTML = '<h1 class="pagetitle">記事の報告</h1>'
+    + '<p>記事「<a href="#/記事:'+encodeURIComponent(title)+'">'+esc(title)+'</a>」について、違反の報告を受け付けます。ログインは不要です。</p>'
+    + '<form class="form" id="report-form">'
+    + '<label>理由</label><select id="rep-reason"><option>個人情報や住所の掲載</option><option>誹謗中傷・嫌がらせ</option><option>他人の著作物・写真の無断転載</option><option>権利侵害</option><option>違法行為を助長する情報</option><option>性的・成人向けコンテンツ</option><option>スパム・広告</option><option>実在の個人についての虚偽情報</option><option>その他</option></select>'
+    + '<label>詳細<span class="hint">任意</span></label><textarea id="rep-detail" style="min-height:110px"></textarea>'
+    + turnstileSlot()
+    + '<p style="margin-top:1rem"><button class="btn primary" type="submit">報告を送信する</button></p><div id="rep-msg"></div></form>';
+  document.title = "記事の報告 - 誰もしらんペディア";
+  loadTurnstile();
+  document.getElementById("report-form").addEventListener("submit", async function(e){
+    e.preventDefault();
+    var msg = document.getElementById("rep-msg");
+    var res = await api("/api/reports", { method: "POST", body: {
+      article_id: a.id,
+      reason: document.getElementById("rep-reason").value,
+      detail: document.getElementById("rep-detail").value,
+      turnstile_token: turnstileToken()
+    }});
+    if (res.status === 201){
+      content.innerHTML = '<h1 class="pagetitle">記事の報告</h1><div class="notice ok">報告を受け付けました。管理者が確認します。ご協力ありがとうございました。</div><p><a href="#/記事:'+encodeURIComponent(title)+'">記事に戻る</a></p>';
+    } else {
+      msg.innerHTML = '<div class="notice err">'+esc(errText(res))+'</div>';
+    }
+  });
+}
+
+/* ---------- 編集フォーム ---------- */
+var draftImages = []; // {storage_path, url, caption}
+
+async function viewEditor(title, presetTitle){
+  var a = null;
+  if (title){
+    loading();
+    var r = await fetchArticleByTitle(title);
+    if (r.status !== 200){ location.hash = "#/記事:"+encodeURIComponent(title); return; }
+    a = r.data.article;
+    a.images = r.data.images || [];
+  }
+  draftImages = a ? a.images.map(function(im){ return { storage_path: im.storage_path, url: im.url, caption: im.caption || "" }; }) : [];
+  await loadTitles();
+  var parts = a ? splitInfobox(a.body) : { rows: [], text: "" };
+  var catOpts = CATS.map(function(c){ return '<option value="'+esc(c.name)+'"'+(a && a.category===c.name ? " selected":"")+'>'+esc(c.name)+'</option>'; }).join("");
+  content.innerHTML = '<h1 class="pagetitle">'+(a ? "「"+esc(a.title)+"」を編集" : "新規記事を作成")+'</h1>'
+    + '<div class="notice">投稿・編集はサーバー側で頻度制限されています（接続元ごとに1日10回まで、1分間隔。暫定値）。アカウント登録は不要です。</div>'
+    + '<form class="form" id="edit-form">'
+    + '<label>ニックネーム<span class="hint">任意。編集履歴に表示されます（空欄なら「匿名」）</span></label><input type="text" id="ed-nick" value="'+esc(nickname())+'" placeholder="匿名" maxlength="50" />'
+    + (a ? '<label>記事タイトル</label><input type="text" value="'+esc(a.title)+'" disabled />'
+         : '<label>記事タイトル</label><input type="text" id="ed-title" value="'+esc(presetTitle||"")+'" placeholder="例: 自販機前で待つ猫" maxlength="200" />')
+    + '<label>本文<span class="hint">見出しは == 見出し == 、箇条書きは * 、記事リンクは [[記事名]]</span></label>'
+    + '<textarea id="ed-body" placeholder="記事タイトルは、……である。\n\n== 概要 ==\n……">'+(a ? esc(parts.text) : "")+'</textarea>'
+    + '<div class="markup-help">記法: <code>== 見出し ==</code> <code>=== 小見出し ===</code> <code>* 箇条書き</code> <code>\'\'\'太字\'\'\'</code> <code>[[記事名]]</code> <code>[[記事名|表示文字]]</code>　<a href="#/特別:書き方">書き方の詳細</a></div>'
+    + '<label>写真<span class="hint">複数枚可。1枚目が情報ボックスに表示されます。アップロード時に自動で圧縮され、EXIF（位置情報など）は除去されます</span></label>'
+    + '<div id="ed-images"></div>'
+    + '<input type="file" id="ed-file" accept="image/jpeg,image/png,image/webp,image/gif" multiple />'
+    + '<div class="small" id="ed-upload-msg"></div>'
+    + '<div class="row"><div><label>カテゴリ</label><select id="ed-cat">'+catOpts+'</select></div>'
+    + '<div><label>新しいカテゴリ<span class="hint">追加する場合のみ（入力するとこちらが優先）</span></label><input type="text" id="ed-newcat" placeholder="例: 都市伝説" maxlength="100" /></div></div>'
+    + '<label>タグ<span class="hint">カンマ区切り</span></label><input type="text" id="ed-tags" value="'+(a ? esc(a.tags.join(", ")) : "")+'" placeholder="例: 猫, 夜, 観察記録" />'
+    + '<label>関連記事<span class="hint">カンマ区切り、記事タイトルで指定</span></label><input type="text" id="ed-related" value="'+(a ? esc(a.related.join(", ")) : "")+'" placeholder="例: 夜の自販機通り" />'
+    + '<label>情報ボックス<span class="hint">1行に1項目、「項目名: 内容」の形式</span></label><textarea id="ed-infobox" style="min-height:110px" placeholder="分類: 猫（推定）\n主な出没地: 商店街">'+(a ? esc(infoboxRowsToText(parts.rows)) : "")+'</textarea>'
+    + turnstileSlot()
+    + '<p class="small">投稿前に<a href="#/特別:禁止事項">禁止事項</a>を確認してください。個人情報や住所、他人の写真の無断転載などは禁止されています。</p>'
+    + '<p style="margin-top:1rem"><button class="btn primary" type="submit" id="ed-save">'+(a ? "変更を保存" : "記事を投稿")+'</button>　<a href="'+(a ? "#/記事:"+encodeURIComponent(a.title) : "#/メインページ")+'">キャンセル</a></p>'
+    + '<div id="ed-msg"></div></form>';
+  document.title = (a ? "編集" : "新規作成") + " - 誰もしらんペディア";
+  loadTurnstile();
+  renderDraftImages();
+  document.getElementById("ed-file").addEventListener("change", function(e){
+    var files = Array.prototype.slice.call(e.target.files || []);
+    e.target.value = "";
+    files.forEach(function(f){ uploadDraftImage(f); });
+  });
+  document.getElementById("edit-form").addEventListener("submit", function(e){
+    e.preventDefault(); saveEditor(a);
+  });
+}
+
+/* 画像を canvas で再エンコード（長辺1600px以下、EXIF除去）してからアップロード */
+function fileToBase64(file){
+  return new Promise(function(resolve, reject){
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      try {
+        var max = 1600;
+        var scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        var w = Math.max(1, Math.round(img.naturalWidth * scale));
+        var h = Math.max(1, Math.round(img.naturalHeight * scale));
+        var canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        var type = file.type === "image/png" ? "image/png" : "image/jpeg";
+        canvas.toBlob(function(blob){
+          if (!blob){ reject(new Error("画像の変換に失敗しました")); return; }
+          var rd = new FileReader();
+          rd.onload = function(){ resolve(rd.result); };
+          rd.onerror = reject;
+          rd.readAsDataURL(blob);
+        }, type, 0.85);
+      } catch(err){ reject(err); }
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error("画像を読み込めませんでした")); };
+    img.src = url;
+  });
+}
+
+async function uploadDraftImage(file){
+  var msg = document.getElementById("ed-upload-msg");
+  if (msg) msg.textContent = "アップロード中: " + file.name;
+  try {
+    var dataUrl = await fileToBase64(file);
+    var r = await api("/api/upload", { method: "POST", body: { data: dataUrl, turnstile_token: turnstileToken() } });
+    if (r.status === 201){
+      draftImages.push({ storage_path: r.data.path, url: r.data.url, caption: "" });
+      renderDraftImages();
+      if (msg) msg.textContent = "アップロードしました: " + file.name;
+    } else {
+      if (msg) msg.textContent = "";
+      alert(errText(r, "アップロードに失敗しました"));
+    }
+  } catch(e){
+    if (msg) msg.textContent = "";
+    alert(e.message || "アップロードに失敗しました");
+  }
+}
+
+function renderDraftImages(){
+  var box = document.getElementById("ed-images");
+  if (!box) return;
+  box.innerHTML = draftImages.map(function(im, i){
+    return '<div class="imgedit"><img src="'+esc(im.url)+'" alt="" /><div class="grow"><div class="small">写真 '+(i+1)+(i===0 ? "（情報ボックスに表示）" : "")+'</div>'
+      + '<input type="text" data-cap="'+i+'" value="'+esc(im.caption||"")+'" placeholder="キャプション（写真の説明）" /></div>'
+      + '<div class="moves"><button type="button" class="btn" data-up="'+i+'" '+(i===0?"disabled":"")+'>↑</button><button type="button" class="btn" data-down="'+i+'" '+(i===draftImages.length-1?"disabled":"")+'>↓</button></div>'
+      + '<button type="button" class="btn danger" data-delimg="'+i+'">削除</button></div>';
+  }).join("");
+  box.querySelectorAll("[data-cap]").forEach(function(inp){
+    inp.addEventListener("input", function(){ draftImages[parseInt(inp.getAttribute("data-cap"),10)].caption = inp.value; });
+  });
+  box.querySelectorAll("[data-delimg]").forEach(function(b){
+    b.addEventListener("click", function(){ draftImages.splice(parseInt(b.getAttribute("data-delimg"),10), 1); renderDraftImages(); });
+  });
+  box.querySelectorAll("[data-up]").forEach(function(b){
+    b.addEventListener("click", function(){ var i = parseInt(b.getAttribute("data-up"),10); var t = draftImages[i-1]; draftImages[i-1] = draftImages[i]; draftImages[i] = t; renderDraftImages(); });
+  });
+  box.querySelectorAll("[data-down]").forEach(function(b){
+    b.addEventListener("click", function(){ var i = parseInt(b.getAttribute("data-down"),10); var t = draftImages[i+1]; draftImages[i+1] = draftImages[i]; draftImages[i] = t; renderDraftImages(); });
+  });
+}
+
+async function saveEditor(existing){
+  var msg = document.getElementById("ed-msg");
+  var saveBtn = document.getElementById("ed-save");
+  var nick = document.getElementById("ed-nick").value.trim();
+  saveNickname(nick);
+  var title = existing ? existing.title : document.getElementById("ed-title").value.trim();
+  var bodyText = document.getElementById("ed-body").value.trim();
+  if (!title){ msg.innerHTML = '<div class="notice err">記事タイトルを入力してください。</div>'; return; }
+  if (!existing && TITLES[title]){ msg.innerHTML = '<div class="notice err">「'+esc(title)+'」は既に存在します。<a href="#/編集:'+encodeURIComponent(title)+'">その記事を編集</a>してください。</div>'; return; }
+  if (bodyText.length < 10){ msg.innerHTML = '<div class="notice err">本文が短すぎます。もう少し書いてください。</div>'; return; }
+  var rows = infoboxTextToRows(document.getElementById("ed-infobox").value);
+  var fullBody = infoboxToBlock(rows) + bodyText;
+  var nc = document.getElementById("ed-newcat").value.trim();
+  var catSel = document.getElementById("ed-cat");
+  var category = nc || (catSel && catSel.value) || "未分類";
+  var payload = {
+    body: fullBody,
+    category: category,
+    tags: splitList(document.getElementById("ed-tags").value),
+    related: splitList(document.getElementById("ed-related").value),
+    nickname: nick,
+    images: draftImages.map(function(im){ return { storage_path: im.storage_path, caption: im.caption || "" }; }),
+    turnstile_token: turnstileToken()
+  };
+  saveBtn.disabled = true;
+  msg.innerHTML = "";
+  var r;
+  if (existing){
+    r = await api("/api/articles/" + existing.id, { method: "PUT", body: payload });
+  } else {
+    payload.title = title;
+    r = await api("/api/articles", { method: "POST", body: payload });
+  }
+  saveBtn.disabled = false;
+  if (r.status === 200 || r.status === 201){
+    await loadTitles();
+    location.hash = "#/記事:"+encodeURIComponent(r.data.title || title);
+  } else {
+    msg.innerHTML = '<div class="notice err">'+esc(errText(r))+'</div>';
+  }
+}
+
+/* ---------- 管理 ---------- */
+async function viewAdmin(){
+  loading();
+  var r = await api("/api/admin/reports");
+  if (r.status === 401){ viewAdminLogin(); return; }
+  if (r.status !== 200){ content.innerHTML = '<h1 class="pagetitle">管理</h1><div class="notice err">'+esc(errText(r))+'</div>'; return; }
+  var reps = r.data.reports || [];
+  var actR = await api("/api/admin/actions");
+  var actions = (actR.data && actR.data.actions) || [];
+  var repRows = reps.map(function(x){
+    var ops = "";
+    if (x.status === "open") ops += '<button class="btn" data-done="'+x.id+'">対応済みにする</button> ';
+    if (x.article_id) ops += '<button class="btn" data-hide="'+x.article_id+'">記事を非公開/公開</button> <button class="btn danger" data-del="'+x.article_id+'">記事を削除</button>';
+    return '<tr><td>'+fmtDate(x.created_at)+'</td><td>'+(x.article_id ? '<a href="#/記事:'+encodeURIComponent(x.article_title || "")+'">'+esc(x.article_title || "(無題)")+'</a>' : esc(x.article_title || "(削除済み)"))+'</td><td>'+esc(x.reason)+'</td><td>'+esc(x.detail || "")+'</td><td>'+(x.status === "done" ? "対応済み" : "未処理")+'</td><td>'+ops+'</td></tr>';
+  }).join("");
+  var actRows = actions.map(function(x){
+    return '<tr><td>'+fmtDate(x.created_at)+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.target)+'</td><td>'+esc(x.detail || "")+'</td></tr>';
+  }).join("");
+  content.innerHTML = '<h1 class="pagetitle">管理</h1>'
+    + '<p><button class="btn" id="admin-logout">ログアウト</button></p>'
+    + '<h2 style="font-family:var(--serif);font-weight:400;border-bottom:1px solid var(--line);padding-bottom:.2rem">報告一覧</h2>'
+    + (reps.length ? '<table class="plain"><thead><tr><th>日時</th><th>記事</th><th>理由</th><th>詳細</th><th>状態</th><th>操作</th></tr></thead><tbody>'+repRows+'</tbody></table>' : '<p class="small">報告はまだありません。</p>')
+    + '<h2 style="font-family:var(--serif);font-weight:400;border-bottom:1px solid var(--line);padding-bottom:.2rem;margin-top:1.6rem">投稿制限（BAN）</h2>'
+    + '<form class="form" id="ban-form"><label>対象のIPハッシュ<span class="hint">編集履歴やデータベースで確認した64文字の値</span></label><input type="text" id="ban-hash" placeholder="SHA-256 ハッシュ（16進数64文字）" />'
+    + '<label>期限<span class="hint">空欄なら無期限</span></label><input type="datetime-local" id="ban-until" />'
+    + '<label>理由</label><input type="text" id="ban-reason" />'
+    + '<p style="margin-top:1rem"><button class="btn danger" type="submit">この接続元を制限する</button></p><div id="ban-msg"></div></form>'
+    + '<h2 style="font-family:var(--serif);font-weight:400;border-bottom:1px solid var(--line);padding-bottom:.2rem;margin-top:1.6rem">管理操作の履歴</h2>'
+    + (actions.length ? '<table class="plain"><thead><tr><th>日時</th><th>操作</th><th>対象</th><th>詳細</th></tr></thead><tbody>'+actRows+'</tbody></table>' : '<p class="small">履歴はまだありません。</p>');
+  document.title = "管理 - 誰もしらんペディア";
+  document.getElementById("admin-logout").addEventListener("click", async function(){
+    await api("/api/admin/logout", { method: "POST", body: {} });
+    location.hash = "#/メインページ";
+  });
+  content.querySelectorAll("[data-done]").forEach(function(b){ b.addEventListener("click", async function(){
+    await api("/api/admin/reports/" + b.getAttribute("data-done") + "/done", { method: "POST", body: {} });
+    viewAdmin();
+  }); });
+  content.querySelectorAll("[data-hide]").forEach(function(b){ b.addEventListener("click", async function(){
+    var res = await api("/api/admin/articles/" + b.getAttribute("data-hide") + "/hide", { method: "POST", body: {} });
+    if (res.status === 200){ await loadTitles(); alert("記事の状態を「" + (res.data.status === "hidden" ? "非公開" : "公開") + "」に変更しました。"); }
+    viewAdmin();
+  }); });
+  content.querySelectorAll("[data-del]").forEach(function(b){ b.addEventListener("click", async function(){
+    if (!confirm("この記事を完全に削除しますか？（編集履歴も消えます）")) return;
+    await api("/api/admin/articles/" + b.getAttribute("data-del"), { method: "DELETE" });
+    await loadTitles();
+    viewAdmin();
+  }); });
+  document.getElementById("ban-form").addEventListener("submit", async function(e){
+    e.preventDefault();
+    var until = document.getElementById("ban-until").value;
+    var res = await api("/api/admin/ban", { method: "POST", body: {
+      ip_hash: document.getElementById("ban-hash").value.trim(),
+      until: until ? new Date(until).toISOString() : null,
+      reason: document.getElementById("ban-reason").value
+    }});
+    var msg = document.getElementById("ban-msg");
+    if (res.status === 200){ msg.innerHTML = '<div class="notice ok">投稿制限を設定しました。</div>'; }
+    else { msg.innerHTML = '<div class="notice err">'+esc(errText(res))+'</div>'; }
+  });
+}
+
+function viewAdminLogin(){
+  content.innerHTML = '<h1 class="pagetitle">管理者ログイン</h1>'
+    + '<p class="small">管理者専用です。一般の利用者向けのアカウント登録・ログインはありません。</p>'
+    + '<form class="form" id="admin-login-form"><label>メールアドレス</label><input type="email" id="ad-email" autocomplete="username" />'
+    + '<label>パスワード</label><input type="password" id="ad-pass" autocomplete="current-password" />'
+    + '<p style="margin-top:1rem"><button class="btn primary" type="submit">ログイン</button></p><div id="ad-msg"></div></form>';
+  document.title = "管理者ログイン - 誰もしらんペディア";
+  document.getElementById("admin-login-form").addEventListener("submit", async function(e){
+    e.preventDefault();
+    var res = await api("/api/admin/login", { method: "POST", body: {
+      email: document.getElementById("ad-email").value,
+      password: document.getElementById("ad-pass").value
+    }});
+    if (res.status === 200){ viewAdmin(); }
+    else { document.getElementById("ad-msg").innerHTML = '<div class="notice err">'+esc(errText(res))+'</div>'; }
+  });
+}
+
+/* ---------- ルーティング ---------- */
+function route(){
+  var h = location.hash || "#/メインページ";
+  if (h.indexOf("#sec-") === 0) return;
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("scrim").classList.remove("show");
+  window.scrollTo(0, 0);
+  var m;
+  if (h === "#random"){ goRandom(); return; }
+  if (h === "#/メインページ" || h === "#/" || h === "#"){ viewHome(); }
+  else if ((m = h.match(/^#\/記事:(.+)$/))) viewArticle(decodeURIComponent(m[1]));
+  else if ((m = h.match(/^#\/履歴:(.+)$/))) viewHistory(decodeURIComponent(m[1]));
+  else if ((m = h.match(/^#\/版:(.+)\/([0-9a-f-]{36})$/))) viewVersion(decodeURIComponent(m[1]), m[2]);
+  else if ((m = h.match(/^#\/編集:(.+)$/))) viewEditor(decodeURIComponent(m[1]));
+  else if ((m = h.match(/^#\/新規作成(?:\?title=(.+))?$/))) viewEditor(null, m[1] ? decodeURIComponent(m[1]) : "");
+  else if ((m = h.match(/^#\/カテゴリ:(.+)$/))) viewCategory(decodeURIComponent(m[1]));
+  else if ((m = h.match(/^#\/検索:(.*)$/))) viewSearch(decodeURIComponent(m[1]));
+  else if ((m = h.match(/^#\/報告:(.+)$/))) viewReport(decodeURIComponent(m[1]));
+  else if ((m = h.match(/^#\/特別:(.+)$/))) viewSpecial(decodeURIComponent(m[1]));
+  else if (h === "#/最近の更新") viewRecent();
+  else if (h === "#/記事一覧") viewAll();
+  else if (h === "#/管理") viewAdmin();
+  else viewHome();
+}
+
+document.getElementById("searchform").addEventListener("submit", function(e){
+  e.preventDefault();
+  var q = document.getElementById("searchinput").value.trim();
+  if (!q) return;
+  if (Object.prototype.hasOwnProperty.call(TITLES, q)) location.hash = "#/記事:"+encodeURIComponent(q);
+  else location.hash = "#/検索:"+encodeURIComponent(q);
+});
+document.getElementById("nav-random").addEventListener("click", function(e){ e.preventDefault(); goRandom(); });
+document.getElementById("hamb").addEventListener("click", function(){
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("scrim").classList.toggle("show");
+});
+document.getElementById("scrim").addEventListener("click", function(){
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("scrim").classList.remove("show");
+});
+window.addEventListener("hashchange", route);
+loadTitles();
+route();
+</script>
+</body>
+</html>
