@@ -1,12 +1,24 @@
 "use strict";
 /* POST /api/admin/login  body: { email, password }
    Supabase Auth で本人確認し、ユーザーIDが ADMIN_USER_ID と一致する場合のみ
-   署名付き httpOnly セッションCookie を発行する。一般向けの登録・ログインは無い。 */
+   署名付き httpOnly セッションCookie を発行する。一般向けの登録・ログインは無い。
+   POST ?op=logout : ログアウト。POST /api/admin/logout は vercel.json の
+   rewrite でこちらに届く（Hobbyプランの関数数上限12個に収めるため
+   logout.js を統合した）。 */
 const {
   env, supabaseUrl, serviceKey, send, fail, readBody, sessionCookieHeader, signSession, logAdmin,
 } = require("../_lib");
 
+/* POST /api/admin/logout — 管理セッションCookieを消す（旧 logout.js の処理をそのまま移設） */
+function handleLogout(req, res) {
+  if (req.method !== "POST") return fail(res, 405, "Method Not Allowed");
+  res.setHeader("Set-Cookie", sessionCookieHeader(req, "", 0));
+  send(res, 200, { ok: true });
+}
+
 module.exports = async function handler(req, res) {
+  /* rewrite 経由のログアウト（?op=logout）は元の logout ハンドラへ */
+  if ((req.query || {}).op === "logout") return handleLogout(req, res);
   if (req.method !== "POST") return fail(res, 405, "Method Not Allowed");
   try {
     const body = await readBody(req);

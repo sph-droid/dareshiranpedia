@@ -82,5 +82,17 @@ api/reports.js      違反報告
 api/upload.js       画像アップロード
 api/admin/          管理者用（ログイン、報告処理、非公開化、削除、BAN、操作履歴）
 schema.sql          Supabase 用テーブル作成SQL
-vercel.json         Vercel 設定（ヘッダのみ。ルーティングは標準動作）
+vercel.json         Vercel 設定（ヘッダ＋rewrite）
+```
+
+※API の関数ファイルは12個に収めてあります。Vercel の Hobby プランは
+1デプロイメントあたりサーバーレス関数が最大12個までのため、一部の
+エンドポイントは独立ファイルにせず、既存ファイルに統合し、vercel.json の
+rewrite で振り分けています（URL・動作は従来通り）。
+
+- 復元 `POST /api/articles/:id/restore` → `api/articles/[id].js`（`?op=restore`）
+- 過去版表示 `GET /api/articles/:id/revisions/:rid` → `api/articles/[id]/revisions/index.js`（`?rid=`）
+- ログアウト `POST /api/admin/logout` → `api/admin/login.js`（`?op=logout`）
+- 報告の対応済み化 `POST /api/admin/reports/:id/done` → `api/admin/reports.js`（`?op=done`）
+- 公開/非公開切替 `POST /api/admin/articles/:id/hide` → `api/admin/articles/[id].js`（`?op=hide`）
 ```
